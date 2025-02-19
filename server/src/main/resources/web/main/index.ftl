@@ -79,6 +79,7 @@
     <#--  接入说明  -->
     <div class="page-header">
         <p class="text-success" style="color: red">支持doc、docx、pdf、excel、txt格式根据关键词定位高亮预览（以外格式仅支持预览）</p>
+        <p class="text-success">本仓库地址：<a href="https://github.com/zxx17/kkFileViewHighlight">Github</a></p>
     </div>
     <div>
         <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#fileTypeList" aria-expanded="false" aria-controls="fileTypeList">
