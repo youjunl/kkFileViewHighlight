@@ -1,5 +1,5 @@
 # kkFileViewHighlight 🔍
-
+演示地址：http://106.75.176.60:8012/index （请勿上传重要文件，服务器会定期清理）
 ## ✨ 关键词高亮定位功能
 支持在 doc、docx、pdf、excel、txt 等格式文件中实现关键词高亮定位功能。只需在预览 URL 后添加 keyword 参数即可，多个关键词可用空格分隔。
 
