@@ -67,7 +67,7 @@ public class OnlinePreviewController {
      * 在线预览文件
      *
      * @param url 文件URL，需要进行Base64解码
-     * @param keyword 高亮关键词，可选，同样需要进行Base64解码
+     * @param keyword 高亮关键词，可选
      * @param model 用于向视图传递数据的模型对象
      * @param req HTTP请求对象，用于获取请求相关的信息
      * @return 返回视图名称，用于展示预览页面

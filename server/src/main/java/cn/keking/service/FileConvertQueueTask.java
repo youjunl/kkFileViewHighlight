@@ -63,6 +63,7 @@ public class FileConvertQueueTask {
                         logger.info("正在处理预览转换任务，url：{}，预览类型：{}", url, fileType);
                         if (isNeedConvert(fileType)) {
                             FilePreview filePreview = previewFactory.get(fileAttribute);
+                            // 调用文件预览处理方法 提前转换（如ppt-->pdf）
                             filePreview.filePreviewHandle(url, new ExtendedModelMap(), fileAttribute);
                         } else {
                             logger.info("预览类型无需处理，url：{}，预览类型：{}", url, fileType);
