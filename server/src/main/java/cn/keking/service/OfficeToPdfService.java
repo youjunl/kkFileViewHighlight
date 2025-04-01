@@ -65,7 +65,11 @@ public class OfficeToPdfService {
         } else {
             builder = LocalConverter.builder().storeProperties(customProperties);
         }
-        builder.build().convert(inputFile).to(outputFile).execute();
+        LocalConverter localConverter = builder.build();
+        localConverter
+                .convert(inputFile)
+                    .to(outputFile)
+                .execute();
     }
 
 

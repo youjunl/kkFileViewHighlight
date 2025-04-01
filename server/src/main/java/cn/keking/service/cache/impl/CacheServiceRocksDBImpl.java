@@ -230,6 +230,11 @@ public class CacheServiceRocksDBImpl implements CacheService {
     }
 
     @Override
+    public void batchAddQueueTask(List<String> urls) {
+        blockingQueue.addAll(urls);
+    }
+
+    @Override
     public String takeQueueTask() throws InterruptedException {
         return blockingQueue.take();
     }

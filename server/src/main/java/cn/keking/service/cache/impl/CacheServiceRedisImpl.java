@@ -117,6 +117,12 @@ public class CacheServiceRedisImpl implements CacheService {
     }
 
     @Override
+    public void batchAddQueueTask(List<String> urls) {
+        RBlockingQueue<String> queue = redissonClient.getBlockingQueue(TASK_QUEUE_NAME);
+        queue.addAllAsync(urls);
+    }
+
+    @Override
     public String takeQueueTask() throws InterruptedException {
         RBlockingQueue<String> queue = redissonClient.getBlockingQueue(TASK_QUEUE_NAME);
         return queue.take();

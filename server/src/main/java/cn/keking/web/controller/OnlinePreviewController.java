@@ -10,6 +10,7 @@ import cn.keking.utils.KkFileUtils;
 import cn.keking.utils.WebUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fr.opensagres.xdocreport.core.io.IOUtils;
+import fr.opensagres.xdocreport.document.json.JSONObject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
@@ -23,8 +24,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RequestCallback;
 import org.springframework.web.client.RestTemplate;
 
@@ -204,4 +204,16 @@ public class OnlinePreviewController {
         cacheService.addQueueTask(url);
         return "success";
     }
+
+    @PostMapping("/batchAddTask")
+    @SuppressWarnings("unchecked")
+    @ResponseBody
+    public String batchAddTask(@RequestBody JSONObject req){
+        List<String> urls = (List<String>) req.get("urls");
+        logger.info("批量添加转码队列url大小：{}", urls.size());
+        cacheService.batchAddQueueTask(urls);
+        return "success";
+    }
+
+
 }

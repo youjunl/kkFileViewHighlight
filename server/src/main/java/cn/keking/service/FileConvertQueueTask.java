@@ -9,12 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.ui.ExtendedModelMap;
 
 import javax.annotation.PostConstruct;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
-/**
- * Created by kl on 2018/1/19.
- * Content :消费队列中的转换文件
- */
 @Service
 public class FileConvertQueueTask {
 
@@ -22,6 +18,16 @@ public class FileConvertQueueTask {
     private final FilePreviewFactory previewFactory;
     private final CacheService cacheService;
     private final FileHandlerService fileHandlerService;
+
+    private static final ExecutorService threadPool = new ThreadPoolExecutor(
+            4,
+            8,
+            30L, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(),
+            new FileConvertThreadFactory(),
+            new ThreadPoolExecutor.AbortPolicy()
+    );
+
 
     public FileConvertQueueTask(FilePreviewFactory previewFactory, CacheService cacheService, FileHandlerService fileHandlerService) {
         this.previewFactory = previewFactory;
@@ -31,59 +37,72 @@ public class FileConvertQueueTask {
 
     @PostConstruct
     public void startTask() {
-        new Thread(new ConvertTask(previewFactory, cacheService, fileHandlerService))
-                .start();
-        logger.info("队列处理文件转换任务启动完成 ");
+        threadPool.submit(new QueueConsumerTask());
+        logger.info(">>>>>文件转换队列任务启动完成");
     }
 
-    static class ConvertTask implements Runnable {
-
-        private final Logger logger = LoggerFactory.getLogger(ConvertTask.class);
-        private final FilePreviewFactory previewFactory;
-        private final CacheService cacheService;
-        private final FileHandlerService fileHandlerService;
-
-        public ConvertTask(FilePreviewFactory previewFactory,
-                           CacheService cacheService,
-                           FileHandlerService fileHandlerService) {
-            this.previewFactory = previewFactory;
-            this.cacheService = cacheService;
-            this.fileHandlerService = fileHandlerService;
-        }
-
+    class QueueConsumerTask implements Runnable {
         @Override
         public void run() {
-            while (true) {
-                String url = null;
+            while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    url = cacheService.takeQueueTask();
+                    String url = cacheService.takeQueueTask();
                     if (url != null) {
-                        FileAttribute fileAttribute = fileHandlerService.getFileAttribute(url, null);
-                        FileType fileType = fileAttribute.getType();
-                        logger.info("正在处理预览转换任务，url：{}，预览类型：{}", url, fileType);
-                        if (isNeedConvert(fileType)) {
-                            FilePreview filePreview = previewFactory.get(fileAttribute);
-                            // 调用文件预览处理方法 提前转换（如ppt-->pdf）
-                            filePreview.filePreviewHandle(url, new ExtendedModelMap(), fileAttribute);
-                        } else {
-                            logger.info("预览类型无需处理，url：{}，预览类型：{}", url, fileType);
-                        }
+                        processUrlAsync(url);
                     }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    logger.warn("队列消费线程被中断");
                 } catch (Exception e) {
-                    try {
-                        TimeUnit.SECONDS.sleep(10);
-                    } catch (Exception ex) {
-                        Thread.currentThread().interrupt();
-                        ex.printStackTrace();
-                    }
-                    logger.info("处理预览转换任务异常，url：{}", url, e);
+                    // TODO 发送通知
+                    logger.error("队列消费异常", e);
+                    sleepOnError();
                 }
             }
         }
 
-        public boolean isNeedConvert(FileType fileType) {
-            return fileType.equals(FileType.COMPRESS) || fileType.equals(FileType.OFFICE) || fileType.equals(FileType.CAD);
+        private void processUrlAsync(String url) {
+            CompletableFuture.runAsync(() -> processTask(url), threadPool)
+                    .exceptionally(e -> {
+                        logger.error("任务处理异常，url: {}", url, e);
+                        return null;
+                    });
+        }
 
+        private void processTask(String url) {
+            try {
+                FileAttribute fileAttribute = fileHandlerService.getFileAttribute(url, null);
+                FileType fileType = fileAttribute.getType();
+                logger.info("线程[{}] 处理任务，url：{}，类型：{}",
+                        Thread.currentThread().getName(), url, fileType);
+
+                if (isNeedConvert(fileType)) {
+                    FilePreview filePreview = previewFactory.get(fileAttribute);
+                    filePreview.filePreviewHandle(url, new ExtendedModelMap(), fileAttribute);
+                    logger.info("线程[{}] 处理任务完成，url：{}，类型：{}",
+                            Thread.currentThread().getName(), url, fileType);
+                }else{
+                    logger.info("线程[{}] 不需要转换，url：{}，类型：{}",
+                            Thread.currentThread().getName(), url, fileType);
+                }
+            } catch (Exception e) {
+                // TODO 补偿策略 并记录
+                logger.error("文件处理异常，url: {}", url, e);
+            }
+        }
+
+        private void sleepOnError() {
+            try {
+                TimeUnit.SECONDS.sleep(10);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        private boolean isNeedConvert(FileType fileType) {
+            return fileType.equals(FileType.COMPRESS) ||
+                    fileType.equals(FileType.OFFICE) ||
+                    fileType.equals(FileType.CAD);
         }
     }
 

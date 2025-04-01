@@ -37,6 +37,7 @@ public interface CacheService {
     String getMediaConvertCache(String key);
     void cleanCache();
     void addQueueTask(String url);
+    void batchAddQueueTask(List<String> urls);
     String takeQueueTask() throws InterruptedException;
 
 }
