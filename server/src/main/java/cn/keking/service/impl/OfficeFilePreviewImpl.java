@@ -27,7 +27,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringTokenizer;
-
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by kl on 2018/1/17.
@@ -49,6 +49,8 @@ public class OfficeFilePreviewImpl implements FilePreview {
     private final FileHandlerService fileHandlerService;
     private final OfficeToPdfService officeToPdfService;
     private final OtherFilePreviewImpl otherFilePreview;
+
+    private final ReentrantLock lock = new ReentrantLock(); // 定义锁
 
     public OfficeFilePreviewImpl(FileHandlerService fileHandlerService, OfficeToPdfService officeToPdfService, OtherFilePreviewImpl otherFilePreview) {
         this.fileHandlerService = fileHandlerService;
@@ -124,63 +126,85 @@ public class OfficeFilePreviewImpl implements FilePreview {
         String cacheName = fileAttribute.getCacheName();
         //转换后生成文件的路径
         String outFilePath = fileAttribute.getOutFilePath();
-        if (!officePreviewType.equalsIgnoreCase("html")) {
-            if (ConfigConstants.getOfficeTypeWeb().equalsIgnoreCase("web")) {
-                if (suffix.equalsIgnoreCase("xlsx") || suffix.equalsIgnoreCase("xls")) {
-                    model.addAttribute("pdfUrl", KkFileUtils.htmlEscape(url)); //特殊符号处理
-                    return XLSX_FILE_PREVIEW_PAGE;
-                }
-                if (suffix.equalsIgnoreCase("csv")) {
-                    model.addAttribute("csvUrl", KkFileUtils.htmlEscape(url));
-                    return CSV_FILE_PREVIEW_PAGE;
-                }
-            }
-        }
-        if (forceUpdatedCache || !fileHandlerService.listConvertedFiles().containsKey(cacheName) || !ConfigConstants.isCacheEnabled()) {
-            // 下载远程文件到本地，如果文件在本地已存在不会重复下载
-            ReturnResponse<String> response = DownloadUtils.downLoad(fileAttribute, fileName);
-            if (response.isFailure()) {
-                return otherFilePreview.notSupportedFile(model, fileAttribute, response.getMsg());
-            }
-            String filePath = response.getContent();
-            boolean isPwdProtectedOffice = OfficeUtils.isPwdProtected(filePath);    // 判断是否加密文件
-            if (isPwdProtectedOffice && !StringUtils.hasLength(filePassword)) {
-                // 加密文件需要密码
-                model.addAttribute("needFilePassword", true);
-                return EXEL_FILE_PREVIEW_PAGE;
-            } else {
-                if (StringUtils.hasText(outFilePath)) {
-                    try {
-                        officeToPdfService.openOfficeToPDF(filePath, outFilePath, fileAttribute);
-                    } catch (OfficeException e) {
-                        if (isPwdProtectedOffice && !OfficeUtils.isCompatible(filePath, filePassword)) {
-                            // 加密文件密码错误，提示重新输入
-                            model.addAttribute("needFilePassword", true);
-                            model.addAttribute("filePasswordError", true);
-                            return EXEL_FILE_PREVIEW_PAGE;
-                        }
-                        return otherFilePreview.notSupportedFile(model, fileAttribute, "抱歉，该文件版本不兼容，文件版本错误。");
-                    }
-                    if (isHtmlView) {
-                        // 对转换后的文件进行操作(改变编码方式)
-                        fileHandlerService.doActionConvertedFile(outFilePath);
-                    }
-                    //是否保留OFFICE源文件
-                    if (!fileAttribute.isCompressFile() && ConfigConstants.getDeleteSourceFile()) {
-                        KkFileUtils.deleteFileByPath(filePath);
-                    }
-                    if (userToken || !isPwdProtectedOffice) {
-                        // 加入缓存
-                        fileHandlerService.addConvertedFile(cacheName, fileHandlerService.getRelativePath(outFilePath));
-                    }
-                }
-            }
 
+        boolean needDownload = forceUpdatedCache ||
+                !fileHandlerService.listConvertedFiles().containsKey(cacheName) ||
+                !ConfigConstants.isCacheEnabled();
+
+        if (needDownload) {
+            lock.lock(); // 加锁
+            try {
+                // 再次检查缓存状态，避免重复下载
+                if (forceUpdatedCache ||
+                        !fileHandlerService.listConvertedFiles().containsKey(cacheName) ||
+                        !ConfigConstants.isCacheEnabled()) {
+
+                    int retryCount = 3; // 最大重试次数
+                    boolean downloadSuccess = false;
+                    Exception lastException = null;
+
+                    for (int i = 0; i < retryCount; i++) {
+                        try {
+                            // 下载远程文件到本地
+                            ReturnResponse<String> response = DownloadUtils.downLoad(fileAttribute, fileName);
+                            if (response.isFailure()) {
+                                return otherFilePreview.notSupportedFile(model, fileAttribute, response.getMsg());
+                            }
+
+                            String filePath = response.getContent();
+                            boolean isPwdProtectedOffice = OfficeUtils.isPwdProtected(filePath);
+
+                            if (isPwdProtectedOffice && !StringUtils.hasLength(filePassword)) {
+                                model.addAttribute("needFilePassword", true);
+                                return EXEL_FILE_PREVIEW_PAGE;
+                            } else {
+                                if (StringUtils.hasText(outFilePath)) {
+                                    try {
+                                        officeToPdfService.openOfficeToPDF(filePath, outFilePath, fileAttribute);
+                                    } catch (OfficeException e) {
+                                        if (isPwdProtectedOffice && !OfficeUtils.isCompatible(filePath, filePassword)) {
+                                            model.addAttribute("needFilePassword", true);
+                                            model.addAttribute("filePasswordError", true);
+                                            return EXEL_FILE_PREVIEW_PAGE;
+                                        }
+                                        return otherFilePreview.notSupportedFile(model, fileAttribute, "抱歉，该文件版本不兼容，文件版本错误。");
+                                    }
+                                    if (isHtmlView) {
+                                        // 对转换后的文件进行操作(改变编码方式)
+                                        fileHandlerService.doActionConvertedFile(outFilePath);
+                                    }
+                                    // 是否保留OFFICE源文件
+                                    if (!fileAttribute.isCompressFile() && ConfigConstants.getDeleteSourceFile()) {
+                                        KkFileUtils.deleteFileByPath(filePath);
+                                    }
+                                    if (userToken || !isPwdProtectedOffice) {
+                                        // 加入缓存
+                                        fileHandlerService.addConvertedFile(cacheName, fileHandlerService.getRelativePath(outFilePath));
+                                    }
+                                }
+                            }
+                            downloadSuccess = true;
+                            break; // 下载成功，退出重试循环
+                        } catch (Exception e) {
+                            lastException = e;
+                            logger.warn("文件下载失败，正在尝试第 {} 次重试...", i + 1, e);
+                        }
+                    }
+
+                    if (!downloadSuccess) {
+                        logger.error("文件下载失败，已达到最大重试次数", lastException);
+                        return otherFilePreview.notSupportedFile(model, fileAttribute, "文件下载失败，请稍后重试或联系管理员。");
+                    }
+                }
+            } finally {
+                lock.unlock(); // 释放锁
+            }
         }
+
         if (!isHtmlView && baseUrl != null && (OFFICE_PREVIEW_TYPE_IMAGE.equals(officePreviewType) || OFFICE_PREVIEW_TYPE_ALL_IMAGES.equals(officePreviewType))) {
             return getPreviewType(model, fileAttribute, officePreviewType, cacheName, outFilePath, fileHandlerService, OFFICE_PREVIEW_TYPE_IMAGE, otherFilePreview);
         }
-        model.addAttribute("pdfUrl", WebUtils.encodeFileName(cacheName));  //输出转义文件名 方便url识别
+        model.addAttribute("pdfUrl", WebUtils.encodeFileName(cacheName));  // 输出转义文件名 方便url识别
         return isHtmlView ? EXEL_FILE_PREVIEW_PAGE : PDF_FILE_PREVIEW_PAGE;
     }
 
@@ -190,14 +214,6 @@ public class OfficeFilePreviewImpl implements FilePreview {
         List<String> imageUrls = null;
         try {
             imageUrls = fileHandlerService.pdf2jpg(outFilePath, outFilePath, pdfName, fileAttribute);
-            // TODO NO-NO-NO
-//            String keywords = Optional.ofNullable(model.getAttribute("keyword"))
-//                    .map(Object::toString)
-//                    .orElse(null);
-//            if (keywords != null) {
-//                ImagesKeywordsOCRSortedUtils.getSortedImages(imageUrls, keywords);
-//            }
-            // TODO NO-NO-NO
         } catch (Exception e) {
             Throwable[] throwableArray = ExceptionUtils.getThrowables(e);
             for (Throwable throwable : throwableArray) {
@@ -264,5 +280,4 @@ public class OfficeFilePreviewImpl implements FilePreview {
             }
         }
     }
-
 }
