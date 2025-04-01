@@ -17,6 +17,7 @@ import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
@@ -63,6 +64,9 @@ public class OnlinePreviewController {
         this.otherFilePreview = otherFilePreview;
     }
 
+    @Value("${preview.allowed-origins}")
+    private String previewAllowedOrigins;
+
     /**
      * 在线预览文件
      *
@@ -96,6 +100,10 @@ public class OnlinePreviewController {
         fileUrl = WebUtils.urlEncoderencode(fileUrl);
         // 如果文件URL为空，返回错误信息
         if (ObjectUtils.isEmpty(fileUrl)) {
+            return otherFilePreview.notSupportedFile(model, "非法路径,不允许访问");
+        }
+        // 如果文件URL不是信任的源，返回错误信息
+        if (!"*".equals(previewAllowedOrigins) && !fileUrl.startsWith(previewAllowedOrigins)) {
             return otherFilePreview.notSupportedFile(model, "非法路径,不允许访问");
         }
         // 调用文件预览处理方法，返回视图名称
