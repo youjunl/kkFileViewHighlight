@@ -77,7 +77,12 @@ public class OnlinePreviewController {
      * @return 返回视图名称，用于展示预览页面
      */
     @GetMapping("/onlinePreview")
-    public String onlinePreview(String url, String keyword, Model model, HttpServletRequest req) {
+    public String onlinePreview(
+            String url,
+            String keyword,
+            Integer pageNum,
+            Model model,
+            HttpServletRequest req) {
         String fileUrl;
         try {
             // 解码文件URL
@@ -92,6 +97,7 @@ public class OnlinePreviewController {
         // 将文件属性和解码后的关键词添加到模型中
         model.addAttribute("file", fileAttribute);
         model.addAttribute("keyword", keyword);
+        model.addAttribute("pageNum", pageNum);
         // 根据文件属性获取对应的文件预览处理类
         FilePreview filePreview = previewFactory.get(fileAttribute);
         // 记录日志信息

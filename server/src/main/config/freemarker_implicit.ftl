@@ -11,6 +11,7 @@
 [#-- @ftlvariable name="imgUrls" type="java.util.List<String>"--]
 [#-- @ftlvariable name="textData" type="java.lang.String" --]
 [#-- @ftlvariable name="keyword" type="java.lang.String" --]
+[#-- @ftlvariable name="pageNum" type="java.lang.Integer" --]
 [#-- @ftlvariable name="xmlContent" type="java.lang.String" --]
 [#-- @ftlvariable name="textContent" type="java.lang.String" --]
 [#-- @ftlvariable name="textType" type="java.lang.String" --]

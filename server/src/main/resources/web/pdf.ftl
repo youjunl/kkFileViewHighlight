@@ -27,9 +27,10 @@
         url = baseUrl + 'getCorsFile?urlPath=' + encodeURIComponent(Base64.encode(url));
     }
     var keyword = '${keyword}';
+    var pageNum = '${pageNum}';
 
     <#--document.getElementsByTagName('iframe')[0].src = "${baseUrl}pdfjs/web/viewer.html?file=" + encodeURIComponent(url) + "&disablepresentationmode=${pdfPresentationModeDisable}&disableopenfile=${pdfOpenFileDisable}&disableprint=${pdfPrintDisable}&disabledownload=${pdfDownloadDisable}&disablebookmark=${pdfBookmarkDisable}&disableediting=${pdfDisableEditing}";-->
-    document.getElementsByTagName('iframe')[0].src = "${baseUrl}pdfExt/web/viewer.html?file=" + encodeURIComponent(url)+ "&keyword="+ encodeURIComponent(keyword);
+    document.getElementsByTagName('iframe')[0].src = "${baseUrl}pdfExt/web/viewer.html?file=" + encodeURIComponent(url)+ "&keyword="+ encodeURIComponent(keyword) + "&pageNum="+ encodeURIComponent(pageNum);
     document.getElementsByTagName('iframe')[0].height = document.documentElement.clientHeight - 10;
     /**
      * 页面变化调整高度

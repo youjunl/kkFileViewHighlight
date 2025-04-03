@@ -1362,7 +1362,9 @@ const PDFViewerApplication = {
         let spreadMode = _app_options.AppOptions.get("spreadModeOnLoad");
 
         if (stored.page && viewOnLoad !== ViewOnLoad.INITIAL) {
-          hash = `page=${stored.page}&zoom=${zoom || stored.zoom},` + `${stored.scrollLeft},${stored.scrollTop}`;
+          const urlParams = new URLSearchParams(window.location.search);
+          const pageNum = urlParams.get('pageNum') === null ? stored.page : urlParams.get('pageNum');
+          hash = `page=${pageNum}&zoom=${zoom || stored.zoom},` + `${stored.scrollLeft},${stored.scrollTop}`;
           rotation = parseInt(stored.rotation, 10);
 
           if (sidebarView === _ui_utils.SidebarView.UNKNOWN) {

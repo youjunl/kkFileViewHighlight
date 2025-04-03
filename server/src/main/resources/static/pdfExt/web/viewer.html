@@ -38,6 +38,16 @@ See https://github.com/adobe-type-tools/cmap-resources
 
 
   <script src="viewer.js"></script>
+  <script>
+    // 在PDF加载完成后设置初始页面
+    document.addEventListener('webviewerloaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const pageNum = urlParams.get('pageNum');
+      if (pageNum && !isNaN(pageNum) && parseInt(pageNum) > 0) {
+        PDFViewerApplication.page = parseInt(pageNum);
+      }
+    });
+  </script>
 
   </head>
 
