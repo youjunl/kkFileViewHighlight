@@ -5735,10 +5735,20 @@ class PDFFindController {
       }
     }
 
+    // 如果关键字与该页面的某些内容匹配，就高亮这个页面的这个部分
+    let hightLigths = [];
+    if(query.length > 0 && query[0] !== ""){
+      query.forEach(function(item){
+        if(pageContent.indexOf(item) > -1){
+          hightLigths.push(pageContent.substring(pageContent.indexOf(item), pageContent.indexOf(item)+100));
+        }
+      });
+    }
+
     if (phraseSearch) {
-      this._calculatePhraseMatch(query, pageIndex, pageContent, pageDiffs, entireWord);
+      this._calculatePhraseMatch(hightLigths, pageIndex, pageContent, pageDiffs, entireWord);
     } else {
-      this._calculateWordMatch(query, pageIndex, pageContent, pageDiffs, entireWord);
+      this._calculateWordMatch(hightLigths, pageIndex, pageContent, pageDiffs, entireWord);
     }
 
     if (this._state.highlightAll) {

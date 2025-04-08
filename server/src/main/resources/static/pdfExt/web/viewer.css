@@ -37,22 +37,22 @@
   /*position: relative;*/
   margin: -1px;
   padding: 1px;
-  background-color: #407fbf;
+  background-color: #7700BB;
   border-radius: 4px;
   -webkit-animation: flash 1s ease-in-out 3;
   animation: flash 1s ease-in-out 3;
 }
 
 @-webkit-keyframes flash {
-  0% { background-color: #407fbf; }
+  0% { background-color: #7700BB; }
   50% { background-color: transparent; }
-  100% { background-color: #407fbf; }
+  100% { background-color: #7700BB; }
 }
 
 @keyframes flash {
-  0% { background-color: #407fbf; }
+  0% { background-color: #7700BB; }
   50% { background-color: transparent; }
-  100% { background-color: #407fbf; }
+  100% { background-color: #7700BB; }
 }
 
 .textLayer .highlight.begin {
@@ -68,7 +68,7 @@
 }
 
 .textLayer .highlight.selected {
-  background-color: #407fbf;
+  background-color: #7700BB;
 }
 
 .textLayer ::-moz-selection {
