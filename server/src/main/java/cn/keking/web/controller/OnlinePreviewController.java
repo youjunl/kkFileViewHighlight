@@ -92,6 +92,28 @@ public class OnlinePreviewController {
             String errorMsg = String.format(BASE64_DECODE_ERROR_MSG, "url");
             return otherFilePreview.notSupportedFile(model, errorMsg);
         }
+
+        /*
+        这是我的场景的前端的实践（AI知识库问答场景，decodeKeyword是回答的内容的原始切片内容）  预览那边做了延展，并不是精确的字匹配--因为目前做不到【备注：主要都是预览pdf】
+	    console.log('decodeKeyword:', decodeKeyword);
+	    let start = decodeKeyword.search(/[\u4e00-\u9fa5]/);
+	    let end = Math.min(start + 100, decodeKeyword.length);
+	    let keyword = decodeKeyword.substring(start-1, end);
+	    keyword = encodeURIComponent(keyword.replace(/[\r\n]+/g, '').replace(/^\s+/, ''));
+         */
+        if (keyword != null) {
+            keyword = keyword.replaceAll("[^a-zA-Z0-9\\u4e00-\\u9fa5【】？?。.，,！!]", " ");
+            StringBuilder result = new StringBuilder();
+            String[] words = keyword.split(" ");
+            for (String word : words) {
+                // 避免因为模糊高亮造成的碎片化
+                if (word.length() >= 10) {
+                    result.append(word).append(" ");
+                }
+            }
+            keyword = result.toString().trim();
+            logger.info("高亮内容：{}", keyword);
+        }
         // 获取文件属性
         FileAttribute fileAttribute = fileHandlerService.getFileAttribute(fileUrl, req);
         // 将文件属性和解码后的关键词添加到模型中
