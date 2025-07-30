@@ -74,7 +74,7 @@ jobs:
         labels: ${{ steps.meta-base.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        platforms: linux/arm64
+        platforms: linux/amd64, linux/arm64
 
     - name: Extract metadata for app image
       id: meta-app
@@ -97,6 +97,6 @@ jobs:
         labels: ${{ steps.meta-app.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-        platforms: linux/arm64
+        platforms: linux/arm64, linux/arm64
         build-args: |
           BASE_IMAGE=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.BASE_IMAGE_NAME }}:${{ github.sha }}
