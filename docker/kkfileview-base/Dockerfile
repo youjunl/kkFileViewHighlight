@@ -1,5 +1,5 @@
 FROM ubuntu:24.04
-
+ARG TARGETARCH
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
@@ -11,10 +11,13 @@ RUN apt-get update && \
     localedef -i zh_CN -c -f UTF-8 -A /usr/share/locale/locale.alias zh_CN.UTF-8 && \
     locale-gen zh_CN.UTF-8
 
-ADD https://downloadarchive.documentfoundation.org/libreoffice/old/25.8.0.1/deb/aarch64/LibreOffice_25.8.0.1_Linux_aarch64_deb.tar.gz /tmp/
-
-RUN tar zxvf /tmp/LibreOffice_25.8.0.1_Linux_aarch64_deb.tar.gz -C /tmp && \
-    cd /tmp/LibreOffice_25.8.0.1_Linux_aarch64_deb/DEBS/ && \
+RUN if [ "$TARGETARCH" = "arm64" ]; then \
+        wget -O /tmp/LibreOffice.tar.gz "https://downloadarchive.documentfoundation.org/libreoffice/old/25.8.0.1/deb/aarch64/LibreOffice_25.8.0.1_Linux_aarch64_deb.tar.gz"; \
+    else \
+        wget -O /tmp/LibreOffice.tar.gz "https://downloadarchive.documentfoundation.org/libreoffice/old/25.8.0.1/deb/x86_64/LibreOffice_25.8.0.1_Linux_x86-64_deb.tar.gz"; \
+    fi && \
+    tar zxvf /tmp/LibreOffice.tar.gz -C /tmp && \
+    cd /tmp/LibreOffice_25.8.0.1_Linux_*_deb/DEBS/ && \
     dpkg -i *.deb || true && \
     apt-get install -f -y
 
@@ -30,7 +33,7 @@ RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula sele
 
 RUN apt-get autoremove -y && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/LibreOffice_25.8.0.1_Linux_x86-64_deb /tmp/LibreOffice_25.8.0.1_Linux_x86-64_deb.tar.gz
+    rm -rf /var/lib/apt/lists/* /tmp/LibreOffice_25.8.0.1_Linux_*_deb*
 
 ADD fonts/* /usr/share/fonts/chinese/
 
