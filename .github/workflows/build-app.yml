@@ -1,0 +1,28 @@
+name: Build kkFileViewHighligh Only
+
+on:
+  workflow_dispatch:
+
+env:
+  REGISTRY: docker.io
+  BASE_IMAGE_NAME: kkfileview-base
+  APP_IMAGE_NAME: kkfileview
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Build and push application image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: ${{ steps.meta-app.outputs.tags }}
+        labels: ${{ steps.meta-app.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
+        build-args: |
+          BASE_IMAGE=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.BASE_IMAGE_NAME }}:${{ github.sha }}
