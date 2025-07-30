@@ -15,7 +15,7 @@ deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ noble-security main restricted u
     localedef -i zh_CN -c -f UTF-8 -A /usr/share/locale/locale.alias zh_CN.UTF-8 && \
     locale-gen zh_CN.UTF-8
 
-COPY https://downloadarchive.documentfoundation.org/libreoffice/old/25.8.0.1/deb/aarch64/LibreOffice_25.8.0.1_Linux_aarch64_deb.tar.gz /tmp/
+ADD https://downloadarchive.documentfoundation.org/libreoffice/old/25.8.0.1/deb/aarch64/LibreOffice_25.8.0.1_Linux_aarch64_deb.tar.gz /tmp/
 
 RUN tar zxvf /tmp/LibreOffice_25.8.0.1_Linux_aarch64_deb.tar.gz -C /tmp && \
     cd /tmp/LibreOffice_25.8.0.1_Linux_aarch64_deb/DEBS/ && \
