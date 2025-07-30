@@ -1,4 +1,4 @@
-FROM 3.11-bullseye
+FROM python:3.11-bullseye
 #FROM ubuntu:24.04
 ARG TARGETARCH
 ENV DEBIAN_FRONTEND=noninteractive
