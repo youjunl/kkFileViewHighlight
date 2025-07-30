@@ -39,7 +39,7 @@ jobs:
     - name: Build application with Maven
       run: |
         echo "开始Maven构建..."
-        mvn clean package -DskipTests -Dmaven.javadoc.skip=true
+        mvn -B clean package -DskipTests -Dmaven.javadoc.skip=true
         echo "Maven构建完成，检查target目录："
         ls -la server/target/ || echo "server/target目录不存在"
        
