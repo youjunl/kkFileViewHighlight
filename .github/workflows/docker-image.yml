@@ -23,6 +23,26 @@ jobs:
         repository: youjunl/kkFileViewHighlight
         ref: master
 
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Build application with Maven
+      run: |
+        echo "开始Maven构建..."
+        mvn clean package -DskipTests -Dmaven.javadoc.skip=true
+        echo "Maven构建完成，检查target目录："
+        ls -la server/target/ || echo "server/target目录不存在"
+       
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
