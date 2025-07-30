@@ -5,7 +5,13 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         openjdk-8-jre tzdata locales libc-bin xfonts-utils fontconfig libxslt1.1 \
-        cabextract wget && \
+        cabextract wget \
+        python3.11 && \
+
+    # 切换至python3.11
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+    python --version
+    
     echo "Asia/Shanghai" > /etc/timezone && \
     ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     localedef -i zh_CN -c -f UTF-8 -A /usr/share/locale/locale.alias zh_CN.UTF-8 && \
