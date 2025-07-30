@@ -1,31 +1,47 @@
 FROM ubuntu:24.04
 
-RUN sed -i 's@//.*archive.ubuntu.com@//mirrors.aliyun.com@g' /etc/apt/sources.list.d/ubuntu.sources &&\
-    sed -i 's@//security.ubuntu.com@//mirrors.aliyun.com@g' /etc/apt/sources.list.d/ubuntu.sources &&\
-    sed -i 's@//ports.ubuntu.com@//mirrors.aliyun.com@g' /etc/apt/sources.list.d/ubuntu.sources &&\
-	apt-get update &&\
-    export DEBIAN_FRONTEND=noninteractive &&\
-	apt-get install -y --no-install-recommends openjdk-8-jre tzdata locales xfonts-utils fontconfig libreoffice-nogui &&\
-    echo 'Asia/Shanghai' > /etc/timezone &&\
-    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime &&\
-    localedef -i zh_CN -c -f UTF-8 -A /usr/share/locale/locale.alias zh_CN.UTF-8 &&\
-    locale-gen zh_CN.UTF-8 &&\
-# 安装微软字体
-    apt-get install -y --no-install-recommends ttf-mscorefonts-installer &&\
-# 安装文泉驿字体
-    apt-get install -y --no-install-recommends ttf-wqy-microhei ttf-wqy-zenhei xfonts-wqy &&\
-# 清理临时文件
-	apt-get autoremove -y &&\
-    apt-get clean &&\
-    rm -rf /var/lib/apt/lists/*
+ENV DEBIAN_FRONTEND=noninteractive
 
-# 内置一些常用的中文字体，避免普遍性乱码
+RUN echo "deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ noble main restricted universe multiverse\n\
+deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ noble-updates main restricted universe multiverse\n\
+deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ noble-backports main restricted universe multiverse\n\
+deb http://mirrors.tuna.tsinghua.edu.cn/ubuntu/ noble-security main restricted universe multiverse" > /etc/apt/sources.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        openjdk-8-jre tzdata locales libc-bin xfonts-utils fontconfig libxslt1.1 \
+        cabextract wget && \
+    echo "Asia/Shanghai" > /etc/timezone && \
+    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    localedef -i zh_CN -c -f UTF-8 -A /usr/share/locale/locale.alias zh_CN.UTF-8 && \
+    locale-gen zh_CN.UTF-8
+
+COPY https://downloadarchive.documentfoundation.org/libreoffice/old/25.8.0.1/deb/aarch64/LibreOffice_25.8.0.1_Linux_aarch64_deb.tar.gz /tmp/
+
+RUN tar zxvf /tmp/LibreOffice_25.8.0.1_Linux_aarch64_deb.tar.gz -C /tmp && \
+    cd /tmp/LibreOffice_25.8.0.1_Linux_aarch64_deb/DEBS/ && \
+    dpkg -i *.deb || true && \
+    apt-get install -f -y
+
+RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections && \
+    echo "media-types media-types/install-mime.types select install" | debconf-set-selections && \
+    apt-get install -y --no-install-recommends \
+        -o Dpkg::Options::="--force-confdef" \
+        -o Dpkg::Options::="--force-confold" \
+        ttf-mscorefonts-installer \
+        ttf-wqy-microhei \
+        ttf-wqy-zenhei \
+        xfonts-wqy
+
+RUN apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/LibreOffice_25.8.0.1_Linux_x86-64_deb /tmp/LibreOffice_25.8.0.1_Linux_x86-64_deb.tar.gz
+
 ADD fonts/* /usr/share/fonts/chinese/
 
-RUN cd /usr/share/fonts/chinese &&\
-    # 安装字体
-    mkfontscale &&\
-    mkfontdir &&\
+RUN cd /usr/share/fonts/chinese && \
+    mkfontscale && \
+    mkfontdir && \
     fc-cache -fv
 
 ENV LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8
+ENV KK_OFFICE_HOME=/opt/libreoffice25.8
