@@ -45,3 +45,5 @@ RUN cd /usr/share/fonts/chinese && \
 
 ENV LANG=zh_CN.UTF-8 LC_ALL=zh_CN.UTF-8
 ENV KK_OFFICE_HOME=/opt/libreoffice25.8
+ENV PYTHONHOME=/usr/bin
+ENV PYTHONPATH=/usr/lib/python3.12
