@@ -1,5 +1,4 @@
-FROM python:3.11-bullseye
-#FROM ubuntu:24.04
+FROM ubuntu:24.04
 ARG TARGETARCH
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -13,6 +12,9 @@ RUN apt-get update && \
     ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     localedef -i zh_CN -c -f UTF-8 -A /usr/share/locale/locale.alias zh_CN.UTF-8 && \
     locale-gen zh_CN.UTF-8
+
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 
+RUN python --version
 
 RUN if [ "$TARGETARCH" = "arm64" ]; then \
         wget -O /tmp/LibreOffice.tar.gz "https://downloadarchive.documentfoundation.org/libreoffice/old/25.8.0.1/deb/aarch64/LibreOffice_25.8.0.1_Linux_aarch64_deb.tar.gz"; \
