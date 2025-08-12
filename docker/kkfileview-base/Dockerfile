@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        openjdk-8-jre tzdata locales libc-bin xfonts-utils fontconfig libxslt1.1 \
+        openjdk-17-jre tzdata locales libc-bin xfonts-utils fontconfig libxslt1.1 \
         cabextract wget && \
     
     echo "Asia/Shanghai" > /etc/timezone && \
