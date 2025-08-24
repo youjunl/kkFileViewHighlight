@@ -36,7 +36,7 @@
     <dependencies>
         <dependency>
             <groupId>org.jodconverter</groupId>
-            <artifactId>jodconverter-local</artifactId>
+            <artifactId>jodconverter-local-oo</artifactId>
             <version>${jodconverter.version}</version>
         </dependency>
         <dependency>
